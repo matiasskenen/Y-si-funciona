@@ -13,9 +13,39 @@ class ProductoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $productos = Producto::all();
+        /*
+        $productos = Producto::orderBy('id', 'desc')->paginate(5);
+
+        //$productos = Producto::all();
+        return view('producto.index', compact('productos'));
+
+        */
+        
+
+        $query = Producto::query();
+
+        // 🔍 Búsqueda
+
+        if($request->filled('search'))
+        {
+            $query->where('nombre', 'like', '%' . $request->search . '%');
+        }
+
+
+        // ↕️ Ordenamiento
+        if($request->filled('sort'))
+        {
+            $query->orderBy($request->sort, 'asc');
+        }else
+        {
+            $query->orderBy('id', 'desc');
+        }
+
+        // 📄 Paginación
+        $productos = $query->orderBy('id', 'desc')->paginate(5);
+
         return view('producto.index', compact('productos'));
 
     }
@@ -39,9 +69,9 @@ class ProductoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required',
-            'precio' => 'required|numeric',
-            'stock' => 'required|integer',
+            'nombre' => 'required|string|max:255',
+            'precio' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
         ]);
 
         Producto::create($request->all());
@@ -82,9 +112,9 @@ class ProductoController extends Controller
     public function update(Request $request, Producto $producto)
     {
         $request->validate([
-            'nombre' => 'required',
-            'precio' => 'required|numeric',
-            'stock' => 'required|integer',
+            'nombre' => 'required|string|max:255',
+            'precio' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
         ]);
 
         $producto->update($request->all());
@@ -99,7 +129,7 @@ class ProductoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Producto $producto)
     {
         $producto->delete();
         return redirect()->route('productos.index')
